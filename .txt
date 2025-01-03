@@ -1,0 +1,1071 @@
+import gradio as gr
+import requests
+
+# Hugging Face API Key
+API_KEY = "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"
+
+# Hugging Face Model Endpoints
+WHISPER_URL = "https://api-inference.huggingface.co/models/openai/whisper-large"
+FALCON_URL = "https://api-inference.huggingface.co/models/tiiuae/falcon-7b-instruct"
+
+headers = {"Authorization": f"Bearer {API_KEY}"}
+
+# Function to transcribe audio using Whisper
+def transcribe_audio(audio_file):
+    with open(audio_file, "rb") as f:
+        response = requests.post(WHISPER_URL, headers=headers, data=f)
+    result = response.json()
+    if "text" in result:
+        return result["text"]
+    else:
+        return f"Error in transcription: {result}"
+
+# Function to correct grammar using Falcon
+def correct_text(raw_text):
+    payload = {"inputs": f"Correct this text: {raw_text}"}
+    response = requests.post(FALCON_URL, headers=headers, json=payload)
+    result = response.json()
+    if isinstance(result, dict) and "generated_text" in result[0]:
+        return result[0]["generated_text"]
+    else:
+        return f"Error in correction: {result}"
+
+# Pipeline to process transcription and correction
+def process_pipeline(audio_file):
+    raw_transcription = transcribe_audio(audio_file)
+    if "Error" in raw_transcription:
+        return raw_transcription, ""
+    
+    corrected_transcription = correct_text(raw_transcription)
+    return raw_transcription, corrected_transcription
+
+# Gradio Interface
+interface = gr.Interface(
+    fn=process_pipeline,
+    inputs=gr.Audio(type="filepath", label="Upload Audio"),
+    outputs=[
+        gr.Textbox(label="Raw Transcription"),
+        gr.Textbox(label="Corrected Transcription"),
+    ],
+    title="Speech Correction Demo",
+    description="Upload an audio file to transcribe and correct the transcription for grammar.",
+)
+
+if __name__ == "__main__":
+    interface.launch(share=True)
+
+
+/////////////////////////////////////////////////////////////////////////////////
+second -
+import gradio as gr
+import requests
+
+# Hugging Face API Key
+API_KEY = "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"
+
+# Hugging Face Model Endpoints
+WHISPER_URL = "https://api-inference.huggingface.co/models/openai/whisper-large"
+FALCON_URL = "https://api-inference.huggingface.co/models/tiiuae/falcon3-1b-instruct"
+
+headers = {"Authorization": f"Bearer {API_KEY}"}
+
+# Function to transcribe audio using Whisper
+def transcribe_audio(audio_file):
+    with open(audio_file, "rb") as f:
+        response = requests.post(
+            WHISPER_URL,
+            headers=headers,
+            files={"inputs": f}
+        )
+    result = response.json()
+    if "text" in result:
+        return result["text"]
+    else:
+        return f"Error in transcription: {result}"
+
+# Function to correct grammar using Falcon
+def correct_text(raw_text):
+    payload = {"inputs": f"Correct this text: {raw_text}"}
+    response = requests.post(FALCON_URL, headers=headers, json=payload)
+    result = response.json()
+    if isinstance(result, list) and "generated_text" in result[0]:
+        return result[0]["generated_text"]
+    else:
+        return f"Error in correction: {result}"
+
+# Pipeline to process transcription and correction
+def process_pipeline(audio_file):
+    raw_transcription = transcribe_audio(audio_file)
+    if "Error" in raw_transcription:
+        return raw_transcription, ""
+    
+    corrected_transcription = correct_text(raw_transcription)
+    return raw_transcription, corrected_transcription
+
+# Gradio Interface
+interface = gr.Interface(
+    fn=process_pipeline,
+    inputs=gr.Audio(type="filepath", label="Upload Audio"),
+    outputs=[
+        gr.Textbox(label="Raw Transcription"),
+        gr.Textbox(label="Corrected Transcription"),
+    ],
+    title="Speech Correction Demo",
+    description="Upload an audio file to transcribe and correct the transcription for grammar.",
+)
+
+if __name__ == "__main__":
+    interface.launch(share=True)
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////
+import gradio as gr
+import requests
+
+# Hugging Face API Key
+API_KEY = "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"
+
+# Hugging Face Model Endpoints
+WHISPER_URL = "https://api-inference.huggingface.co/models/openai/whisper-large"
+FALCON_URL = "https://api-inference.huggingface.co/models/tiiuae/falcon-7b-instruct"
+# FALCON_URL = "https://api-inference.huggingface.co/models/facebook/bart-large-cnn"
+# FALCON_URL = "https://api-inference.huggingface.co/models/google/flan-t5-large"
+
+
+headers = {"Authorization": f"Bearer {API_KEY}"}
+
+# Function to transcribe audio using Whisper
+def transcribe_audio(audio_file):
+    with open(audio_file, "rb") as f:
+        response = requests.post(WHISPER_URL, headers=headers, data=f)
+    result = response.json()
+    if "text" in result:
+        return result["text"]
+    else:
+        return f"Error in transcription: {result}"
+
+# Function to correct grammar using Falcon
+# Function to correct grammar using Falcon
+# Function to correct grammar using the updated model
+def correct_text(raw_text):
+    # Refined prompt for clarity
+    prompt = f"Correct the grammar and semantics of the following text without ignoring any part or adding extra information:\n\n{raw_text}"
+    payload = {"inputs": prompt}
+    
+    # API call to Hugging Face model
+    response = requests.post(FALCON_URL, headers=headers, json=payload)
+    result = response.json()
+    
+    # Process the result to extract only the corrected text
+    if isinstance(result, list) and "summary_text" in result[0]:
+        corrected_text = result[0]["summary_text"]
+        
+        # Ensure only the corrected text is returned
+        corrected_text = corrected_text.replace(prompt, "").strip()
+        return corrected_text
+    else:
+        return f"Error in correction: {result}"
+
+
+# Pipeline to process transcription and correction
+def handle_request(audio_file):
+    try:
+        # Status update for processing start
+        status_message = "Processing, please wait..."
+        yield "", "", status_message
+
+        # Transcribe audio
+        raw_transcription = transcribe_audio(audio_file)
+        if "Error" in raw_transcription:
+            status_message = "Error occurred during transcription."
+            yield raw_transcription, "", status_message
+            return
+        
+        # Correct transcription
+        corrected_transcription = correct_text(raw_transcription)
+        if "Error" in corrected_transcription:
+            status_message = "Error occurred during text correction."
+            yield raw_transcription, corrected_transcription, status_message
+            return
+        
+        # Final status
+        status_message = "Processing complete!"
+        yield raw_transcription, corrected_transcription, status_message
+
+    except Exception as e:
+        # Handle exceptions
+        error_message = f"An error occurred: {str(e)}"
+        yield "", "", error_message
+
+# Gradio Interface
+interface = gr.Interface(
+    fn=handle_request,
+    inputs=gr.Audio(type="filepath", label="Upload Audio"),
+    outputs=[
+        gr.Textbox(label="Raw Transcription"),
+        gr.Textbox(label="Corrected Transcription"),
+        gr.Textbox(label="Status"),
+    ],
+    live=True,  # Allows updating outputs dynamically
+    title="Speech Correction Demo",
+    description="Upload an audio file to transcribe and correct the transcription for grammar.",
+)
+
+if __name__ == "__main__":
+    interface.launch(share=True)
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+import gradio as gr
+import requests
+
+# Hugging Face API Key
+API_KEY = "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"
+
+# Hugging Face Model Endpoints
+WHISPER_URL = "https://api-inference.huggingface.co/models/openai/whisper-large"
+FALCON_URL = "https://api-inference.huggingface.co/models/tiiuae/falcon-7b-instruct"
+
+headers = {"Authorization": f"Bearer {API_KEY}"}
+
+# Function to transcribe audio using Whisper
+def transcribe_audio(audio_file):
+    with open(audio_file, "rb") as f:
+        response = requests.post(WHISPER_URL, headers=headers, data=f)
+    result = response.json()
+    if "text" in result:
+        return result["text"]
+    else:
+        return f"Error in transcription: {result}"
+
+# Function to correct grammar using Falcon
+def correct_text(raw_text):
+    # Refined prompt for clarity
+    prompt = f"Please correct the grammar, punctuation, and semantics of the following text while preserving its original meaning and context. Ensure that no part of the text is ignored:\n\n{raw_text}"
+    payload = {"inputs": prompt}
+    
+    # API call to Hugging Face model
+    response = requests.post(FALCON_URL, headers=headers, json=payload)
+    result = response.json()
+    
+    # Extract the corrected text from 'generated_text'
+    if isinstance(result, list) and "generated_text" in result[0]:
+        corrected_text = result[0]["generated_text"]
+        
+        # Remove the prompt from the output to leave only the corrected text
+        if corrected_text.startswith(prompt):
+            corrected_text = corrected_text[len(prompt):].strip()
+        return corrected_text
+    else:
+        return f"Error in correction: {result}"
+
+# Pipeline to process transcription and correction
+def handle_request(audio_file):
+    try:
+        # Status update for processing start
+        status_message = "Processing, please wait..."
+        yield "", "", status_message
+
+        # Transcribe audio
+        raw_transcription = transcribe_audio(audio_file)
+        if "Error" in raw_transcription:
+            status_message = "Error occurred during transcription."
+            yield raw_transcription, "", status_message
+            return
+        
+        # Correct transcription
+        corrected_transcription = correct_text(raw_transcription)
+        if "Error" in corrected_transcription:
+            status_message = "Error occurred during text correction."
+            yield raw_transcription, corrected_transcription, status_message
+            return
+        
+        # Final status
+        status_message = "Processing complete!"
+        yield raw_transcription, corrected_transcription, status_message
+
+    except Exception as e:
+        # Handle exceptions
+        error_message = f"An error occurred: {str(e)}"
+        yield "", "", error_message
+
+# Gradio Interface
+interface = gr.Interface(
+    fn=handle_request,
+    inputs=gr.Audio(type="filepath", label="Upload Audio"),
+    outputs=[
+        gr.Textbox(label="Raw Transcription"),
+        gr.Textbox(label="Corrected Transcription"),
+        gr.Textbox(label="Status"),
+    ],
+    live=True,  # Allows updating outputs dynamically
+    title="Speech Correction Demo",
+    description="Upload an audio file to transcribe and correct the transcription for grammar.",
+)
+
+if __name__ == "__main__":
+    interface.launch(share=True)
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+final test before adding the cmudict in the pipeline 
+///////////////////////////////////////////////////////
+import gradio as gr
+import requests
+
+# Hugging Face API Key
+API_KEY = "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"
+
+# Hugging Face Model Endpoints
+WHISPER_URL = "https://api-inference.huggingface.co/models/openai/whisper-large"
+FALCON_URL = "https://api-inference.huggingface.co/models/tiiuae/falcon-7b-instruct"
+
+headers = {"Authorization": f"Bearer {API_KEY}"}
+
+# Function to split text into smaller chunks
+def chunk_text(text, max_length=500):
+    words = text.split()
+    chunks = []
+    chunk = []
+    current_length = 0
+
+    for word in words:
+        if current_length + len(word) + 1 > max_length:  # +1 for the space
+            chunks.append(" ".join(chunk))
+            chunk = [word]
+            current_length = len(word) + 1
+        else:
+            chunk.append(word)
+            current_length += len(word) + 1
+
+    if chunk:
+        chunks.append(" ".join(chunk))
+    
+    return chunks
+
+# Function to transcribe audio using Whisper
+def transcribe_audio(audio_file):
+    with open(audio_file, "rb") as f:
+        response = requests.post(WHISPER_URL, headers=headers, data=f)
+    result = response.json()
+    if "text" in result:
+        return result["text"]
+    else:
+        return f"Error in transcription: {result}"
+
+# Function to correct grammar using Falcon
+def correct_text(raw_text):
+    # Split text into chunks
+    chunks = chunk_text(raw_text, max_length=500)
+    corrected_chunks = []
+
+    for chunk in chunks:
+        prompt = f"Correct the grammar, punctuation and semantics of the following text while preserving its original meaning, make sure the result is accurate:\n\n{chunk}"
+        payload = {"inputs": prompt, "parameters": {"max_new_tokens": 100}}
+        
+        # API call to Hugging Face model
+        response = requests.post(FALCON_URL, headers=headers, json=payload)
+        result = response.json()
+        
+        # Extract the corrected text from 'generated_text'
+        if isinstance(result, list) and "generated_text" in result[0]:
+            corrected_text = result[0]["generated_text"]
+            corrected_chunks.append(corrected_text.replace(prompt, "").strip())
+        else:
+            return f"Error in correction: {result}"
+
+    return " ".join(corrected_chunks)
+
+# Pipeline to process transcription and correction
+def handle_request(audio_file):
+    try:
+        # Status update for processing start
+        status_message = "Processing, please wait..."
+        yield "", "", status_message
+
+        # Transcribe audio
+        raw_transcription = transcribe_audio(audio_file)
+        if "Error" in raw_transcription:
+            status_message = "Error occurred during transcription."
+            yield raw_transcription, "", status_message
+            return
+        
+        # Correct transcription
+        corrected_transcription = correct_text(raw_transcription)
+        if "Error" in corrected_transcription:
+            status_message = "Error occurred during text correction."
+            yield raw_transcription, corrected_transcription, status_message
+            return
+        
+        # Final status
+        status_message = "Processing complete!"
+        yield raw_transcription, corrected_transcription, status_message
+
+    except Exception as e:
+        # Handle exceptions
+        error_message = f"An error occurred: {str(e)}"
+        yield "", "", error_message
+
+# Gradio Interface
+interface = gr.Interface(
+    fn=handle_request,
+    inputs=gr.Audio(type="filepath", label="Upload Audio"),
+    outputs=[
+        gr.Textbox(label="Raw Transcription"),
+        gr.Textbox(label="Corrected Transcription"),
+        gr.Textbox(label="Status"),
+    ],
+    live=True,  # Allows updating outputs dynamically
+    title="Speech Correction Demo",
+    description="Upload an audio file to transcribe and correct the transcription for grammar.",
+)
+
+if __name__ == "__main__":
+    interface.launch(share=True)
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+first testing with phoneme corrected output is wrong only - 
+import gradio as gr
+import requests
+import nltk
+from nltk.corpus import cmudict
+import re
+
+# Ensure CMU Pronouncing Dictionary is downloaded
+nltk.download('cmudict')
+cmu_dict = cmudict.dict()
+
+# Hugging Face API Key
+API_KEY = "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"
+
+# Hugging Face Model Endpoints
+WHISPER_URL = "https://api-inference.huggingface.co/models/openai/whisper-large"
+FALCON_URL = "https://api-inference.huggingface.co/models/tiiuae/falcon-7b-instruct"
+
+headers = {"Authorization": f"Bearer {API_KEY}"}
+
+# Function to transcribe audio using Whisper
+def transcribe_audio(audio_file):
+    with open(audio_file, "rb") as f:
+        response = requests.post(WHISPER_URL, headers=headers, data=f)
+    result = response.json()
+    if "text" in result:
+        return result["text"]
+    else:
+        return f"Error in transcription: {result}"
+
+# Function to clean the corrected transcription
+# def clean_text(text):
+#     # Remove prompts and retain only the corrected text
+#     clean_text = re.sub(r"(?<=\n\n).*", "", text, flags=re.S).strip()
+#     return clean_text
+
+# Function to correct grammar using Falcon
+def correct_text(raw_text):
+    prompt = f"Correct this text for grammar, punctuation, and clarity:\n\n{raw_text}"
+    payload = {"inputs": prompt}
+    response = requests.post(FALCON_URL, headers=headers, json=payload)
+    result = response.json()
+
+    if isinstance(result, list) and "generated_text" in result[0]:
+        corrected_text = result[0]["generated_text"]
+        return clean_text(corrected_text)
+    else:
+        return f"Error in correction: {result}"
+
+# Function to extract and format phonemes
+def extract_phonemes(text):
+    words = re.findall(r'\b\w+\b', text.lower())  # Extract words only
+    phoneme_output = []
+    missing_words = []
+
+    for word in words:
+        if word in cmu_dict:
+            phonemes = " ".join(cmu_dict[word][0])  # Get the first pronunciation
+            phoneme_output.append(f"{word}: {phonemes}")
+        else:
+            missing_words.append(word)
+            phoneme_output.append(f"{word}: [Not found]")
+
+    # Format output
+    phoneme_table = "\n".join(phoneme_output)
+    missing_info = f"\n\nWords not found in dictionary: {', '.join(missing_words) if missing_words else 'None'}"
+    return phoneme_table + missing_info
+
+# Pipeline to process transcription, correction, and phoneme extraction
+def handle_request(audio_file):
+    try:
+        # Status update for processing start
+        status_message = "Processing, please wait..."
+        yield "", "", "", status_message
+
+        # Transcribe audio
+        raw_transcription = transcribe_audio(audio_file)
+        if "Error" in raw_transcription:
+            status_message = "Error occurred during transcription."
+            yield raw_transcription, "", "", status_message
+            return
+        
+        # Correct transcription
+        corrected_transcription = correct_text(raw_transcription)
+        if "Error" in corrected_transcription:
+            status_message = "Error occurred during text correction."
+            yield raw_transcription, corrected_transcription, "", status_message
+            return
+        
+        # Extract phonemes
+        phoneme_output = extract_phonemes(corrected_transcription)
+        
+        # Final status
+        status_message = "Processing complete!"
+        yield raw_transcription, corrected_transcription, phoneme_output, status_message
+
+    except Exception as e:
+        # Handle exceptions
+        error_message = f"An error occurred: {str(e)}"
+        yield "", "", "", error_message
+
+# Gradio Interface
+interface = gr.Interface(
+    fn=handle_request,
+    inputs=gr.Audio(type="filepath", label="Upload Audio"),
+    outputs=[
+        gr.Textbox(label="Raw Transcription"),
+        gr.Textbox(label="Corrected Transcription"),
+        gr.Textbox(label="Phoneme Output", lines=10),
+        gr.Textbox(label="Status"),
+    ],
+    live=True,  # Allows updating outputs dynamically
+    title="Speech Correction and Phoneme Extraction Demo",
+    description="Upload an audio file to transcribe, correct transcription, and extract phonemes for analysis.",
+)
+
+if __name__ == "__main__":
+    interface.launch(share=True)
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+before adding the csv file - final output 
+import gradio as gr
+import requests
+import nltk
+from nltk.corpus import cmudict
+import re
+
+# Ensure CMU Pronouncing Dictionary is downloaded
+nltk.download("cmudict")
+cmu_dict = cmudict.dict()
+
+# Hugging Face API Key and Endpoints
+API_KEY = "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"
+WHISPER_URL = "https://api-inference.huggingface.co/models/openai/whisper-large"
+FALCON_URL = "https://api-inference.huggingface.co/models/tiiuae/falcon-7b-instruct"
+
+headers = {"Authorization": f"Bearer {API_KEY}"}
+
+# Function to transcribe audio
+def transcribe_audio(audio_file):
+    try:
+        with open(audio_file, "rb") as f:
+            response = requests.post(WHISPER_URL, headers=headers, data=f)
+        result = response.json()
+        print("Whisper API Response:", result)
+        if "text" in result:
+            return result["text"]
+        else:
+            return f"Error in transcription: {result}"
+    except Exception as e:
+        return f"Transcription error: {str(e)}"
+
+# Function to clean Falcon output
+def clean_falcon_output(model_output):
+    """
+    Removes the prompt from Falcon model output, focusing only on the corrected text.
+    """
+    try:
+        # Locate the corrected text by splitting after the double newline
+        corrected_text = model_output.split("\n\n")[-1].strip()
+        return corrected_text
+    except Exception as e:
+        print(f"Error cleaning Falcon output: {str(e)}")
+        return model_output.strip()
+
+# Grammar correction function
+def correct_text(raw_text):
+    prompt = f"Correct this text for grammar, punctuation, and clarity:\n\n{raw_text}"
+    payload = {"inputs": prompt}
+
+    try:
+        response = requests.post(FALCON_URL, headers=headers, json=payload)
+        result = response.json()
+        print("Falcon API Response:", result)
+        if isinstance(result, list) and "generated_text" in result[0]:
+            return clean_falcon_output(result[0]["generated_text"])
+        return f"Error in correction: {result}"
+    except requests.exceptions.RequestException as e:
+        return f"Request failed: {str(e)}"
+    except Exception as e:
+        return f"Unexpected error: {str(e)}"
+
+# Function to extract phonemes
+def extract_phonemes(text):
+    words = re.findall(r'\b\w+\b', text.lower())
+    phoneme_output = []
+    missing_words = []
+
+    for word in words:
+        if word in cmu_dict:
+            phonemes = " ".join(cmu_dict[word][0])
+            phoneme_output.append(f"{word}: {phonemes}")
+        else:
+            missing_words.append(word)
+            phoneme_output.append(f"{word}: [Not found]")
+
+    missing_info = f"Words not found in dictionary: {', '.join(missing_words) if missing_words else 'None'}"
+    return "\n".join(phoneme_output) + f"\n\n{missing_info}"
+
+# Gradio handler
+def handle_request(audio_file):
+    try:
+        yield "Processing audio...", "", "Processing, please wait..."
+        raw_transcription = transcribe_audio(audio_file)
+        if "Error" in raw_transcription:
+            yield raw_transcription, "", "Error in transcription"
+            return
+
+        yield raw_transcription, "Processing grammar correction...", "Correcting grammar..."
+        corrected_transcription = correct_text(raw_transcription)
+        if "Error" in corrected_transcription:
+            yield raw_transcription, corrected_transcription, "Error in text correction"
+            return
+
+        # Use only cleaned corrected text for phoneme extraction
+        phoneme_output = extract_phonemes(corrected_transcription)
+
+        yield raw_transcription, corrected_transcription, phoneme_output
+
+    except Exception as e:
+        yield "", "", f"An error occurred: {str(e)}"
+
+# Gradio Interface
+interface = gr.Interface(
+    fn=handle_request,
+    inputs=gr.Audio(type="filepath", label="Upload Audio"),
+    outputs=[
+        gr.Textbox(label="Raw Transcription"),
+        gr.Textbox(label="Corrected Transcription"),
+        gr.Textbox(label="Phoneme Output"),
+    ],
+    live=True,
+    title="Speech-to-Text and Phoneme Extraction",
+    description="Upload an audio file to get transcription, corrected text, and phoneme extraction.",
+)
+
+if __name__ == "__main__":
+    interface.launch(share=True)
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+befor adding rephrasing 
+import gradio as gr
+import requests
+import nltk
+from nltk.corpus import cmudict
+import re
+import csv
+import tempfile
+
+# Ensure CMU Pronouncing Dictionary is downloaded
+nltk.download("cmudict")
+cmu_dict = cmudict.dict()
+
+# Hugging Face API Key and Endpoints
+API_KEY = "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"
+WHISPER_URL = "https://api-inference.huggingface.co/models/openai/whisper-large"
+FALCON_URL = "https://api-inference.huggingface.co/models/tiiuae/falcon-7b-instruct"
+
+headers = {"Authorization": f"Bearer {API_KEY}"}
+
+# Function to transcribe audio
+def transcribe_audio(audio_file):
+    try:
+        with open(audio_file, "rb") as f:
+            response = requests.post(WHISPER_URL, headers=headers, data=f)
+        result = response.json()
+        print("Whisper API Response:", result)
+        if "text" in result:
+            return result["text"]
+        else:
+            return f"Error in transcription: {result}"
+    except Exception as e:
+        return f"Transcription error: {str(e)}"
+
+# Function to clean Falcon output
+def clean_falcon_output(model_output):
+    """
+    Removes the prompt from Falcon model output, focusing only on the corrected text.
+    """
+    try:
+        corrected_text = model_output.split("\n\n")[-1].strip()
+        return corrected_text
+    except Exception as e:
+        print(f"Error cleaning Falcon output: {str(e)}")
+        return model_output.strip()
+
+# Grammar correction function
+def correct_text(raw_text):
+    prompt = f"Correct this text for grammar, punctuation, and clarity:\n\n{raw_text}"
+    payload = {"inputs": prompt}
+
+    try:
+        response = requests.post(FALCON_URL, headers=headers, json=payload)
+        result = response.json()
+        print("Falcon API Response:", result)
+        if isinstance(result, list) and "generated_text" in result[0]:
+            return clean_falcon_output(result[0]["generated_text"])
+        return f"Error in correction: {result}"
+    except requests.exceptions.RequestException as e:
+        return f"Request failed: {str(e)}"
+    except Exception as e:
+        return f"Unexpected error: {str(e)}"
+
+# Function to extract phonemes
+def extract_phonemes(text):
+    words = re.findall(r'\b\w+\b', text.lower())
+    phoneme_data = []
+
+    for word in words:
+        if word in cmu_dict:
+            phonemes = " ".join(cmu_dict[word][0])
+            phoneme_data.append({"word": word, "phonemes": phonemes})
+        else:
+            phoneme_data.append({"word": word, "phonemes": "[Not found]"})
+
+    return phoneme_data
+
+# Function to compare phonemes
+def compare_phonemes(raw_phonemes, corrected_phonemes):
+    comparison_data = []
+    for raw, corrected in zip(raw_phonemes, corrected_phonemes):
+        match = raw["phonemes"] == corrected["phonemes"]
+        comparison_data.append({
+            "word": raw["word"],
+            "raw_phoneme": raw["phonemes"],
+            "corrected_phoneme": corrected["phonemes"],
+            "match": match
+        })
+    return comparison_data
+
+# Function to generate downloadable CSV
+def generate_csv(comparison_data):
+    # Create a temporary file
+    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".csv")
+    with open(temp_file.name, "w", newline="", encoding="utf-8") as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(["Word", "Raw Phoneme", "Corrected Phoneme", "Match"])
+
+        # Write comparison data
+        for data in comparison_data:
+            writer.writerow([
+                data["word"],
+                data["raw_phoneme"],
+                data["corrected_phoneme"],
+                "Yes" if data["match"] else "No"
+            ])
+
+    return temp_file.name
+
+# Gradio handler
+def handle_request(audio_file):
+    try:
+        yield "Processing audio...", "", "Processing, please wait...", None
+        raw_transcription = transcribe_audio(audio_file)
+        if "Error" in raw_transcription:
+            yield raw_transcription, "", "Error in transcription", None
+            return
+
+        yield raw_transcription, "Processing grammar correction...", "Correcting grammar...", None
+        corrected_transcription = correct_text(raw_transcription)
+        if "Error" in corrected_transcription:
+            yield raw_transcription, corrected_transcription, "Error in text correction", None
+            return
+
+        # Phoneme extraction and comparison
+        raw_phonemes = extract_phonemes(raw_transcription)
+        corrected_phonemes = extract_phonemes(corrected_transcription)
+        if not raw_phonemes or not corrected_phonemes:
+            yield raw_transcription, corrected_transcription, "Error extracting phonemes", None
+            return
+
+        comparison_data = compare_phonemes(raw_phonemes, corrected_phonemes)
+
+        # Generate CSV for comparison
+        csv_path = generate_csv(comparison_data)
+
+        yield raw_transcription, corrected_transcription, "Processing complete!", csv_path
+
+    except Exception as e:
+        yield "", "", f"An error occurred: {str(e)}", None
+
+# Gradio Interface
+interface = gr.Interface(
+    fn=handle_request,
+    inputs=gr.Audio(type="filepath", label="Upload Audio"),
+    outputs=[
+        gr.Textbox(label="Raw Transcription"),
+        gr.Textbox(label="Corrected Transcription"),
+        gr.Textbox(label="Status"),
+        gr.File(label="Download CSV"),
+    ],
+    live=True,
+    title="Speech-to-Text with Phoneme and Grammar Correction",
+    description="Upload an audio file to get transcription, corrected text, and a downloadable CSV for comparison.",
+)
+
+if __name__ == "__main__":
+    interface.launch(share=True)
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+final integrated part 1 - running successful 
+
+import gradio as gr
+import requests
+import nltk
+from nltk.corpus import cmudict
+import re
+import csv
+import tempfile
+
+# Ensure CMU Pronouncing Dictionary is downloaded
+nltk.download("cmudict")
+cmu_dict = cmudict.dict()
+
+# Hugging Face API Key and Endpoints
+API_KEY = "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"
+WHISPER_URL = "https://api-inference.huggingface.co/models/openai/whisper-large"
+FALCON_URL = "https://api-inference.huggingface.co/models/tiiuae/falcon-7b-instruct"
+REPHRASER_URL = "https://api-inference.huggingface.co/models/facebook/bart-large-cnn"
+
+headers = {"Authorization": f"Bearer {API_KEY}"}
+
+# Function to transcribe audio
+def transcribe_audio(audio_file):
+    try:
+        with open(audio_file, "rb") as f:
+            response = requests.post(WHISPER_URL, headers=headers, data=f)
+        result = response.json()
+        print("Whisper API Response:", result)
+        if "text" in result:
+            return result["text"]
+        else:
+            return f"Error in transcription: {result}"
+    except Exception as e:
+        return f"Transcription error: {str(e)}"
+
+# Function to correct grammar
+def correct_text(raw_text):
+    prompt = f"Correct this text for grammar, punctuation, and clarity:\n\n{raw_text}"
+    payload = {"inputs": prompt}
+
+    try:
+        response = requests.post(FALCON_URL, headers=headers, json=payload)
+        result = response.json()
+        print("Falcon API Response:", result)
+        if isinstance(result, list) and "generated_text" in result[0]:
+            return result[0]["generated_text"].split("\n\n")[-1].strip()
+        return f"Error in correction: {result}"
+    except Exception as e:
+        return f"Unexpected error: {str(e)}"
+
+# Function to rephrase the text
+def rephrase_text(raw_text):
+    prompt = f"Rephrase this text in a formal, coherent, and concise manner:\n\n{raw_text}"
+    payload = {"inputs": prompt}
+
+    try:
+        response = requests.post(REPHRASER_URL, headers=headers, json=payload)
+        result = response.json()
+        print("Rephraser API Response:", result)
+        if isinstance(result, list) and "summary_text" in result[0]:
+            return result[0]["summary_text"]
+        return f"Error in rephrasing: {result}"
+    except Exception as e:
+        return f"Unexpected error: {str(e)}"
+
+# Function to extract phonemes
+def extract_phonemes(text):
+    words = re.findall(r'\b\w+\b', text.lower())
+    phoneme_data = []
+
+    for word in words:
+        if word in cmu_dict:
+            phonemes = " ".join(cmu_dict[word][0])
+            phoneme_data.append({"word": word, "phonemes": phonemes})
+        else:
+            phoneme_data.append({"word": word, "phonemes": "[Not found]"})
+
+    return phoneme_data
+
+# Function to compare phonemes
+def compare_phonemes(raw_phonemes, corrected_phonemes):
+    comparison_data = []
+    for raw, corrected in zip(raw_phonemes, corrected_phonemes):
+        match = raw["phonemes"] == corrected["phonemes"]
+        comparison_data.append({
+            "word": raw["word"],
+            "raw_phoneme": raw["phonemes"],
+            "corrected_phoneme": corrected["phonemes"],
+            "match": match
+        })
+    return comparison_data
+
+# Function to generate downloadable CSV
+def generate_csv(comparison_data):
+    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".csv")
+    with open(temp_file.name, "w", newline="", encoding="utf-8") as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(["Word", "Raw Phoneme", "Corrected Phoneme", "Match"])
+
+        for data in comparison_data:
+            writer.writerow([
+                data["word"],
+                data["raw_phoneme"],
+                data["corrected_phoneme"],
+                "Yes" if data["match"] else "No"
+            ])
+
+    return temp_file.name
+
+# Gradio handler
+def handle_request(audio_file):
+    try:
+        yield "Processing audio...", "", "Processing, please wait...", "", None
+        raw_transcription = transcribe_audio(audio_file)
+        if "Error" in raw_transcription:
+            yield raw_transcription, "", "", "Error in transcription", None
+            return
+
+        yield raw_transcription, "Processing grammar correction...", "Correcting grammar...", "", None
+        corrected_transcription = correct_text(raw_transcription)
+        if "Error" in corrected_transcription:
+            yield raw_transcription, corrected_transcription, "", "Error in text correction", None
+            return
+
+        yield raw_transcription, corrected_transcription, "Rephrasing text...", "", None
+        enhanced_text = rephrase_text(raw_transcription)
+        if "Error" in enhanced_text:
+            yield raw_transcription, corrected_transcription, "", "Error in rephrasing", None
+            return
+
+        raw_phonemes = extract_phonemes(raw_transcription)
+        corrected_phonemes = extract_phonemes(corrected_transcription)
+        comparison_data = compare_phonemes(raw_phonemes, corrected_phonemes)
+
+        csv_path = generate_csv(comparison_data)
+
+        yield raw_transcription, corrected_transcription, enhanced_text, "Processing complete!", csv_path
+
+    except Exception as e:
+        yield "", "", "", f"An error occurred: {str(e)}", None
+
+# Gradio Interface
+interface = gr.Interface(
+    fn=handle_request,
+    inputs=gr.Audio(type="filepath", label="Upload Audio"),
+    outputs=[
+        gr.Textbox(label="Raw Transcription"),
+        gr.Textbox(label="Corrected Transcription"),
+        gr.Textbox(label="Enhanced Text"),
+        gr.Textbox(label="Status"),
+        gr.File(label="Download CSV"),
+    ],
+    live=True,
+    title="Speech-to-Text with Grammar, Rephrasing, and Phoneme Correction",
+    description="Upload an audio file to get transcription, corrected text, enhanced rephrasing, and a downloadable CSV for phoneme comparison.",
+)
+
+if __name__ == "__main__":
+    interface.launch(share=True)
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+open ai added - but error 
+
+import gradio as gr
+import requests
+import openai
+import nltk
+from nltk.corpus import cmudict
+import re
+
+# Ensure CMU Pronouncing Dictionary is downloaded
+nltk.download("cmudict")
+cmu_dict = cmudict.dict()
+
+# Hugging Face API Key and Endpoints
+API_KEY = "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"
+WHISPER_URL = "https://api-inference.huggingface.co/models/openai/whisper-large"
+
+headers = {"Authorization": f"Bearer {API_KEY}"}
+
+# Set OpenAI API Key
+openai.api_key = "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"
+
+
+# Function to transcribe audio
+def transcribe_audio(audio_file):
+    try:
+        with open(audio_file, "rb") as f:
+            response = requests.post(WHISPER_URL, headers=headers, data=f)
+        result = response.json()
+        if "text" in result:
+            return result["text"]
+        else:
+            return f"Error in transcription: {result}"
+    except Exception as e:
+        return f"Error during transcription: {str(e)}"
+
+# Function to enhance text using OpenAI
+def enhance_text(corrected_text):
+    try:
+        response = openai.Completion.create(
+            model="text-davinci-003",
+            prompt=f"Rephrase the following text in a formal, concise, and coherent manner:\n\n{corrected_text}",
+            max_tokens=150,
+            temperature=0.7,
+        )
+        enhanced_text = response.choices[0].text.strip()
+        return enhanced_text
+    except openai.error.InvalidRequestError as e:
+        return f"Invalid request error: {str(e)}"
+    except openai.error.AuthenticationError as e:
+        return f"Authentication error: {str(e)}"
+    except Exception as e:
+        return f"Unexpected error: {str(e)}"
+
+# Function to handle the Gradio pipeline
+def handle_request(audio_file):
+    try:
+        yield "Processing audio...", "", "", "Processing, please wait..."
+        raw_transcription = transcribe_audio(audio_file)
+        if "Error" in raw_transcription:
+            yield raw_transcription, "", "", "Error in transcription"
+            return
+
+        yield raw_transcription, "Processing grammar correction...", "", "Correcting grammar..."
+        corrected_transcription = raw_transcription  # Placeholder for now
+
+        yield raw_transcription, corrected_transcription, "Processing enhancement...", "Enhancing text..."
+        enhanced_text = enhance_text(corrected_transcription)
+
+        yield raw_transcription, corrected_transcription, enhanced_text, "Processing complete!"
+
+    except Exception as e:
+        yield "", "", "", f"An error occurred: {str(e)}"
+
+# Gradio Interface
+interface = gr.Interface(
+    fn=handle_request,
+    inputs=gr.Audio(type="filepath", label="Upload Audio"),
+    outputs=[
+        gr.Textbox(label="Raw Transcription"),
+        gr.Textbox(label="Corrected Transcription"),
+        gr.Textbox(label="Enhanced Text"),
+        gr.Textbox(label="Status"),
+    ],
+    live=True,
+    title="Speech-to-Text with OpenAI Enhancement",
+    description="Upload an audio file to get transcription, grammar correction, and enhanced text.",
+)
+
+if __name__ == "__main__":
+    interface.launch(share=True)
